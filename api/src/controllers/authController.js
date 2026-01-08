@@ -131,3 +131,55 @@ export const logout = asyncHandler(async (req, res) => {
     message: 'Logout realizado com sucesso'
   });
 });
+
+// @desc    Create admin user (Development only - should be protected in production)
+// @route   POST /api/auth/create-admin
+// @access  Public (for testing - should be protected in production)
+export const createAdmin = asyncHandler(async (req, res) => {
+  const { name, email, password, secretKey } = req.body;
+  
+  // Simple secret key check (you should use env variable in production)
+  const ADMIN_SECRET = process.env.ADMIN_SECRET_KEY || 'futebol-admin-2026';
+  
+  if (secretKey !== ADMIN_SECRET) {
+    return res.status(403).json({
+      success: false,
+      message: 'Chave secreta inválida'
+    });
+  }
+  
+  // Check if user exists
+  const userExists = await User.findOne({ email });
+  if (userExists) {
+    return res.status(400).json({
+      success: false,
+      message: 'Email já cadastrado'
+    });
+  }
+  
+  // Create admin user
+  const user = await User.create({
+    name,
+    email,
+    password,
+    role: 'admin'
+  });
+  
+  // Generate token
+  const token = generateToken(user._id);
+  
+  res.status(201).json({
+    success: true,
+    message: 'Administrador criado com sucesso',
+    token,
+    user: {
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      avatar: user.avatar,
+      skills: user.skills,
+      stats: user.stats
+    }
+  });
+});

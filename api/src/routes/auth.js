@@ -1,5 +1,5 @@
 import express from 'express';
-import { register, login, getMe, logout } from '../controllers/authController.js';
+import { register, login, getMe, logout, createAdmin } from '../controllers/authController.js';
 import { protect } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -138,5 +138,61 @@ router.get('/me', protect, getMe);
  *         description: Não autorizado
  */
 router.post('/logout', protect, logout);
+
+/**
+ * @swagger
+ * /api/auth/create-admin:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Criar usuário administrador
+ *     description: Cria uma conta de administrador (requer chave secreta)
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - name
+ *               - email
+ *               - password
+ *               - secretKey
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: Admin Futebol
+ *               email:
+ *                 type: string
+ *                 example: admin@futebol.com
+ *               password:
+ *                 type: string
+ *                 example: admin123456
+ *               secretKey:
+ *                 type: string
+ *                 example: futebol-admin-2026
+ *     responses:
+ *       201:
+ *         description: Administrador criado com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: Administrador criado com sucesso
+ *                 token:
+ *                   type: string
+ *                 user:
+ *                   $ref: '#/components/schemas/User'
+ *       400:
+ *         description: Email já cadastrado
+ *       403:
+ *         description: Chave secreta inválida
+ */
+router.post('/create-admin', createAdmin);
 
 export default router;

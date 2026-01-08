@@ -6,11 +6,13 @@ import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import swaggerUi from 'swagger-ui-express';
 
 import config from './config/env.js';
 import connectDB from './config/database.js';
 import { initializeSocket } from './services/socketService.js';
 import { errorHandler, notFound } from './middleware/error.js';
+import swaggerSpec from './config/swagger.js';
 
 // Import routes
 import authRoutes from './routes/auth.js';
@@ -66,6 +68,34 @@ app.use('/api/', limiter);
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Health check
+/**
+ * @swagger
+ * /health:
+ *   get:
+ *     tags: [Health]
+ *     summary: Health check endpoint
+ *     description: Verifica se a API está funcionando
+ *     responses:
+ *       200:
+ *         description: API está funcionando
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: API is running
+ *                 timestamp:
+ *                   type: string
+ *                   format: date-time
+ *                 environment:
+ *                   type: string
+ *                   example: production
+ */
 app.get('/health', (req, res) => {
   res.json({
     success: true,
@@ -73,6 +103,18 @@ app.get('/health', (req, res) => {
     timestamp: new Date().toISOString(),
     environment: config.env
   });
+});
+
+// Swagger Documentation
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  customCss: '.swagger-ui .topbar { display: none }',
+  customSiteTitle: 'Futebol API Docs'
+}));
+
+// Swagger JSON
+app.get('/api-docs.json', (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.send(swaggerSpec);
 });
 
 // API Routes
@@ -92,15 +134,16 @@ app.use(errorHandler);
 const PORT = config.port;
 server.listen(PORT, () => {
   console.log(`
-╔══════════════════════════════════════════╗
-║                                          ║
-║   ⚽ Futebol API Server                  ║
-║                                          ║
-║   Environment: ${config.env.padEnd(27)}║
-║   Port: ${PORT.toString().padEnd(33)}║
-║   URL: http://localhost:${PORT.toString().padEnd(18)}║
-║                                          ║
-╚══════════════════════════════════════════╝
+╔══════════════════════════════════════════════╗
+║                                              ║
+║   ⚽ Futebol API Server                      ║
+║                                              ║
+║   Environment: ${config.env.padEnd(31)}║
+║   Port: ${PORT.toString().padEnd(37)}║
+║   URL: http://localhost:${PORT.toString().padEnd(22)}║
+║   Docs: http://localhost:${PORT}/api-docs${' '.padEnd(11)}║
+║                                              ║
+╚══════════════════════════════════════════════╝
   `);
 });
 
